@@ -12,6 +12,7 @@ Students and NIUS:
 #include <stdlib.h>
 #include <string.h>
 
+//posar la configuració de #ifdef per poder canviar lo dels headers
 
 //------------------------------------------------------------ Preparation and environment setup
 // Afegeix una ciutat
