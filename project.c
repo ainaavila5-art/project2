@@ -12,9 +12,20 @@ Students and NIUS:
 #include <stdlib.h>
 #include <string.h>
 
-//posar la configuració de #ifdef per poder canviar lo dels headers
-
 //------------------------------------------------------------ Preparation and environment setup
+//DATE: 20/05/2026
+#define SMALL
+#ifdef SMALL
+    #include "small.h"
+#elif defined(MEDIUM)
+    #include "medium.h"
+#elif defined(LARGE)
+    #include "large.h"
+#else
+    #error "Incorrect definition. You should choose between these options: SMALL, MEDIUM LARGE"
+#endif
+
+
 // Afegeix una ciutat
 struct RoadMap* addToRoadMap(struct RoadMap *head, int city_id, int total_cost);
 
