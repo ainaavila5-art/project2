@@ -3,16 +3,17 @@
 int main(int argc, char **argv) {
     CheckArguments(argc,argv);  
 
-    struct RoadMap *mytrip = NULL;
-    mytrip = addToRoadMap(mytrip, 0,0);
-    mytrip = addToRoadMap(mytrip, 1,150);
-    mytrip = addToRoadMap(mytrip, 2,280);
+    int root_city_id = 0;
+    struct FamilyTreeNode *my_family_tree = buildAncestorsTree(root_city_id);
 
-    printRoadMap(mytrip);
+    printTreeDFS(my_family_tree,0);
+    return 0;
 
-    mytrip = deleteAllRoadMap(mytrip);
-
-    printRoadMap(mytrip);
 }
+
+
+
+
+
 
 

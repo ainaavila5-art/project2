@@ -41,7 +41,7 @@ void CheckArguments (int argc, char **argv){
     }
 }
 
-//DATE: 21/05/2026. This function adds every city chosen to the end of an array
+//DATE: 21/05/2026. This function adds every city chosen to the end of the linked list
 struct RoadMap* addToRoadMap(struct RoadMap *head, int city_id, int total_cost){
     struct RoadMap *new_city = (struct RoadMap*)malloc(sizeof(struct RoadMap));
     new_city -> city_id = city_id;
@@ -59,7 +59,7 @@ struct RoadMap* addToRoadMap(struct RoadMap *head, int city_id, int total_cost){
     return head;
 }
 
-//DATE: 21/05/2026. This function prints the list of the cities in the array
+//DATE: 21/05/2026. This function prints the list of the cities in the linked list
 void printRoadMap(struct RoadMap *head){
     struct RoadMap *current = head;
     while (current != NULL){
@@ -68,7 +68,7 @@ void printRoadMap(struct RoadMap *head){
     }
 }
 
-//DATE: 21/05/2026. This function deletes all the array containing the cities
+//DATE: 21/05/2026. This function deletes all the linked list containing the cities
 struct RoadMap *deleteAllRoadMap(struct RoadMap *head){
     struct RoadMap *current = head;
     struct RoadMap *temp;
@@ -82,25 +82,86 @@ struct RoadMap *deleteAllRoadMap(struct RoadMap *head){
     return head;
 }
 
-
-//------------------------------------------------------------ NAVIGATION AND GRAPH IMPLEMENTATION
-// Cerca la ruta
-int RouteSearch(int source_city_id, int destination_city_id, struct RoadMap *road_map);
-
-
-
 //------------------------------------------------------------ ANCESTOR'S TREE CONSTRUCTION
-// Construeix l'arbre DFS
-struct TreeNode* createTreeDFS(int current_city_id, struct RoadMap *road_map);
+/*DATE: 22/05/2026. This function logically assembles the family relationships using the
+civil registry data
+*/
+struct FamilyTreeNode* buildAncestorsTree(int root_city_id){
+     if (root_city_id == -1){ //Base case: if the ancestor's doesn't exist (leaf), return NULL
+        return NULL;
+     }
+     struct FamilyTreeNode *new_node = (struct FamilyTreeNode*)malloc(sizeof(struct FamilyTreeNode));
 
-// Construeix l'arbre BFS
-struct TreeNode* createTreeBFS(int root_city_id, struct RoadMap *road_map);
+     new_node -> city_id = root_city_id;
+     strcpy(new_node-> motherName, citiesInfo[root_city_id].mother_name);
+     strcpy(new_node-> fatherName, citiesInfo[root_city_id].father_name);
 
-//Mostra l'arbre per pantalla
-void printTree(struct TreeNode *root, int level);
+     new_node -> mother_parents = buildAncestorsTree(citiesInfo[root_city_id].mother_parents_city_id);
+     new_node -> father_parents = buildAncestorsTree(citiesInfo[root_city_id].father_parents_city_id);
+
+     return new_node;
+
+     /*
+     PASSOS PER ENTENDRE LA RECURSIVITAT
+     Crea el node del fill.
+     S'atura i crida a la funció per crear el node de la mare.
+     A dins de la mare, s'atura i crida a la funció per crear el node de l'àvia... i així successivament fins que xoca amb un -1 (que significa que no hi ha més dades d'aquell llinatge).
+     Quan troba el -1, el famós Cas Base que vam fer abans retorna NULL.
+     Com que retorna NULL, l'ordinador entén que la branca ha acabat, "despausa" la funció anterior, l'enganxa al punter, i passa a la següent línia per fer exactament el mateix amb la branca del pare (father_parents).
+     */
+
+}
+
+//DATE: 22/05/2026. This function prints the tree using the DFS strategy.
+void printTreeDFS(struct FamilyTreeNode *root, int level){
+    if (root == NULL){
+        return;
+    }
+    for (int i = 0; i < level; i++){
+        printf("->");
+    }
+
+    printf("%s and %s (%s)\n", root->motherName, root->fatherName, citiesInfo[root->city_id].city_name);
+
+    printTreeDFS(root->mother_parents, level +1); // Recursion for the mother's tree
+    printTreeDFS(root->father_parents, level +1); // Recursion for the father's tree
+
+}
+
+void printTreeBFS(struct FamilyTreeNode *root);
 
 // Allibera la memòria de l'arbre
-void freeFamilyTree(struct TreeNode *root);
+void freeAncestorsTree(struct FamilyTreeNode *root);
+
+
+/*IMPORTANT PER ENTENDRE LES DIFERENTS FUNCIONS
+
+main diu: "Vinga, viatgem en DFS!". Crida a traverseTreeDFS().
+
+traverseTreeDFS llegeix l'arbre i diu: "D'acord, estic a l'arrel (Barcelona) i el següent familiar és a París". Llavors crida a RouteSearch(Barcelona, Paris, road_map).
+
+RouteSearch fa els seus càlculs a la matriu i s'adona que ha de passar per Madrid. Per guardar-ho, crida a addToRoadMap(Madrid, cost).
+
+o sigui, primer creem aquest arbre i fem un traverse. Veu que ha d'anar a una ciutat però com que no ens volem gastar molts diners, mirem el RouteSearch quin és el millor camí i una vegada hem calculat el millor camí, crida a addToRoadMap
+
+
+
+*/
+//------------------------------------------------------------ NAVIGATION AND GRAPH IMPLEMENTATION
+/*
+Aquestes funcions recorren l'arbre creat (usant DFS o BFS) 
+i van cridant a RouteSearch per cada salt entre familiars. calculen les rutes físiques i els costos acumulats
+*/
+struct RoadMap* traverseTreeDFS(struct FamilyTreeNode *root, struct RoadMap *road_map);
+struct RoadMap* traverseTreeBFS(struct FamilyTreeNode *root, struct RoadMap *road_map);
+
+/* Funció que busca el camí físic més curt a la matriu entre 
+la ciutat origen i la ciutat destí (usant heurística o greedy).
+*/
+struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct RoadMap *road_map);
+
+
+
 
 
 
