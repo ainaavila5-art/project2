@@ -200,18 +200,13 @@ o sigui, primer creem aquest arbre i fem un traverse. Veu que ha d'anar a una ci
     2. Otherwise, move to the cheapest unvisited neigbour(gready best-first step)
 */
 
-/* Funció que busca el camí físic més curt a la matriu entre 
-la ciutat origen i la ciutat destí (usant heurística o greedy). Pots posar que una 
-opció és utilitzar el Disjkstra algorithm però que amb el database "large" tardaria
-molt i que busquem una heurística que sigui molt més ràpida amb tots els database
-*/
 struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct RoadMap *road_map){
     //Array to keep track of visited cities so we never loop back
     int visited[NUMBER_CITIES];
     for (int i=0; i<NUMBER_CITIES; i++){
         visited[i]=0;
     }
-    int current = source_city_id
+    int current = source_city_id;
     int leg_cost = 0;
 
     // Calculate the base cost already accumulated in the road map 
@@ -247,7 +242,7 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
         int best_city = -1;
         int best_cost= 999999;
         for ( int i=0; i<NUMBER_CITIES; i++){
-            if (!visited[i] & adjacency_matrix[current][i] != 0) {
+            if (!visited[i] && adjacency_matrix[current][i] != 0) {
                 if(adjacency_matrix[current][i]<best_cost){
                     best_cost= adjacency_matrix[current][i];
                     best_city=i;
@@ -263,8 +258,8 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
         return road_map;
     }
 
-    leg_cost += best_cost
-    current = best_city
+    leg_cost += best_cost;
+    current = best_city;
     visited[current]=1;
     road_map= addToRoadMap(road_map, current, base_cost + leg_cost);
 
@@ -274,43 +269,39 @@ return road_map;
 }
 
 //DATE 25/05/2026: This functions traverse the ancestrors tree already build using DFS
-/*It will compute the full mother brach before father branch and calls RouteSearch for each 
+/*It will compute the full mother branch before father branch and calls RouteSearch for each 
 hop between cities, building the complete road map as a side effect. */
 
-
-/*
-Aquestes funcions recorren l'arbre creat (usant DFS o BFS) 
-i van cridant a RouteSearch per cada salt entre familiars. calculen les rutes físiques i els costos acumulats
-*/
 struct RoadMap* traverseTreeDFS(struct FamilyTreeNode *root, struct RoadMap *road_map, int *current_city){
-    if (node == NULL){
+    if (root == NULL){
         return road_map;
     }
 
     // Go deep on the mother side first (DFS rule)
-    if (node->mother_parents != NULL){
-        int destination = node -> mother_parents -> city_id;
-        printf("Travelling: %s -> %s" \n, 
+    if (root->mother_parents != NULL){
+        int destination = root -> mother_parents -> city_id;
+        printf("Travelling: %s -> %s\n", 
             citiesInfo[*current_city].city_name,
             citiesInfo[destination].city_name);
         
         road_map = RouteSearch(*current_city, destination, road_map);
-        *current_city= destinationprintf("Partial road map so far: \n");
-        printf(road_map);
-        road_map= traverseTreeDFS(node->mother_parents, road_map, current_city);   
+        *current_city= destination;
+        printf("Partial road map so far: \n");
+        printRoadMap(road_map);
+        road_map= traverseTreeDFS(root->mother_parents, road_map, current_city);   
     }
     // Only after the full mother branch is done, go to the father side
-    if (node->father_parents != NULL){
-        int destination = node->father_parents -> city_id;
+    if (root->father_parents != NULL){
+        int destination = root->father_parents -> city_id;
         printf("Traveling: %s -> %s",
             citiesInfo[*current_city].city_name,
             citiesInfo[destination].city_name);
 
-        road_map = RouteSearch(*current_city; destination; road_map);
+        road_map = RouteSearch(*current_city, destination, road_map);
         *current_city= destination;
-        prtintf("Partial road map so far:\n");
+        printf("Partial road map so far:\n");
         printRoadMap(road_map);
-        road_map=traverseTreeDFS(node->father_parents, road_map, current_city);
+        road_map=traverseTreeDFS(root->father_parents, road_map, current_city);
     }
     return road_map;
 }
@@ -415,7 +406,7 @@ int main(int argc, char **argv){
 
     // Step 3: Print the full tree and final road map
     printf("_____Final ancestrors tree (%s order)_____\n", argv[1]);
-    if (strcmp(argc[1], "dfs")== 0 ) {
+    if (strcmp(argv[1], "dfs")== 0 ) {
         printTreeDFS(tree, 0);
     } else{
         printTreeBFS(tree);
@@ -426,7 +417,7 @@ int main(int argc, char **argv){
 
     // Print total cost (sorted in the last node of the road map)
     struct RoadMap *tail = road_map;
-    while (tail->next != NULL) tail= tail-next;
+    while (tail->next != NULL) tail= tail->next;
     printf("Total cost: %d\n", tail->total_cost);
 
     // Step 4: Free all dynamic allocated memory 
