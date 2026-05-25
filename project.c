@@ -127,11 +127,56 @@ void printTreeDFS(struct FamilyTreeNode *root, int level){
     printTreeDFS(root->father_parents, level +1); // Recursion for the father's tree
 
 }
+//DATE: 25/05/2026. This function prints the tree using the BFS strategy.
+void printTreeBFS(struct FamilyTreeNode *root){
+    if (root == NULL){
+        return;
+    }
+    struct FamilyTreeNode **queue = (struct FamilyTreeNode**)malloc(NUMBER_CITIES * sizeof(struct FamilyTreeNode*));
+    int *level_queue = (int*)malloc(NUMBER_CITIES * sizeof(int));
+    int front = 0;
+    int rear = 0;
+    queue[rear] = root;
+    level_queue[rear] = 0;
+    rear++;
+    
+    if (queue ==NULL || level_queue == NULL){
+        printf("ERROR");
+        exit(1);
+    }
+    while (front < rear){
+        struct FamilyTreeNode *current = queue[front];
+        int current_level = level_queue[front];
+        front ++;
+        for (int i = 0; i < current_level; i++){
+            printf("->");
+        }
+        printf("%s and %s (%s)\n", current->motherName, current->fatherName, citiesInfo[current->city_id].city_name);
+        //We add the childs to the queue
+        if (current->mother_parents != NULL){
+            queue[rear] = current->mother_parents;
+            level_queue[rear] = current_level + 1;
+            rear++;
+        }
+        if (current ->father_parents != NULL){
+            queue[rear] = current ->father_parents;
+            level_queue[rear] = current_level + 1;
+            rear++;
+        }
+    }
+    free(queue);
+    free(level_queue);
+}
 
-void printTreeBFS(struct FamilyTreeNode *root);
-
-// Allibera la memòria de l'arbre
-void freeAncestorsTree(struct FamilyTreeNode *root);
+//DATE: 25/05/2026. This function eliminates the tree created 
+void freeAncestorsTree(struct FamilyTreeNode *root){
+    if (root == NULL){
+        return;
+    }
+    freeAncestorsTree(root->mother_parents);
+    freeAncestorsTree(root->father_parents);
+    free(root);
+}
 
 
 /*IMPORTANT PER ENTENDRE LES DIFERENTS FUNCIONS
@@ -156,7 +201,9 @@ struct RoadMap* traverseTreeDFS(struct FamilyTreeNode *root, struct RoadMap *roa
 struct RoadMap* traverseTreeBFS(struct FamilyTreeNode *root, struct RoadMap *road_map);
 
 /* Funció que busca el camí físic més curt a la matriu entre 
-la ciutat origen i la ciutat destí (usant heurística o greedy).
+la ciutat origen i la ciutat destí (usant heurística o greedy). Pots posar que una 
+opció és utilitzar el Disjkstra algorithm però que amb el database "large" tardaria
+molt i que busquem una heurística que sigui molt més ràpida amb tots els database
 */
 struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct RoadMap *road_map);
 
