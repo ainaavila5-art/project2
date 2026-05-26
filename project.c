@@ -210,7 +210,6 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
     int leg_cost = 0;
 
     // Calculate the base cost already accumulated in the road map 
-
     int base_cost= 0;
     if (road_map != NULL){
         struct RoadMap*tail = road_map;
