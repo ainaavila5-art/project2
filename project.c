@@ -11,11 +11,12 @@ Students and NIUS:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 //------------------------------------------------------------ PREPARATION AND ENVIRONMENT SETUP
 
 //DATE: 20/05/2026. With the #ifdef directive we can dyamically load different civil registry datasets
-#define SMALL
+#define LARGE
 #ifdef SMALL
     #include "small.h"
 #elif defined(MEDIUM)
@@ -25,6 +26,12 @@ Students and NIUS:
 #else
     #error "Incorrect definition. You should choose between these options: SMALL, MEDIUM LARGE"
 #endif
+struct FamilyTreeNode* created_nodes[NUMBER_CITIES] = {NULL};
+
+int visited_cities_dfs[NUMBER_CITIES] = {0};
+int visited_cities_bfs[NUMBER_CITIES] = {0};
+int printed_dfs[NUMBER_CITIES] = {0};
+int printed_bfs[NUMBER_CITIES] = {0};
 
 /*DATE: 21/05/2026. This function checks if the input introduced by the user is correct
 by using a series of conditionals
@@ -90,33 +97,30 @@ struct FamilyTreeNode* buildAncestorsTree(int root_city_id){
      if (root_city_id == -1){ //Base case: if the ancestor's doesn't exist (leaf), return NULL
         return NULL;
      }
+
+     if (created_nodes[root_city_id] !=NULL){
+        return created_nodes[root_city_id];
+     }
      struct FamilyTreeNode *new_node = (struct FamilyTreeNode*)malloc(sizeof(struct FamilyTreeNode));
 
      new_node -> city_id = root_city_id;
      strcpy(new_node-> motherName, citiesInfo[root_city_id].mother_name);
      strcpy(new_node-> fatherName, citiesInfo[root_city_id].father_name);
 
+     created_nodes[root_city_id] = new_node;
      new_node -> mother_parents = buildAncestorsTree(citiesInfo[root_city_id].mother_parents_city_id);
      new_node -> father_parents = buildAncestorsTree(citiesInfo[root_city_id].father_parents_city_id);
 
      return new_node;
 
-     /*
-     PASSOS PER ENTENDRE LA RECURSIVITAT
-     Crea el node del fill.
-     S'atura i crida a la funció per crear el node de la mare.
-     A dins de la mare, s'atura i crida a la funció per crear el node de l'àvia... i així successivament fins que xoca amb un -1 (que significa que no hi ha més dades d'aquell llinatge).
-     Quan troba el -1, el famós Cas Base que vam fer abans retorna NULL.
-     Com que retorna NULL, l'ordinador entén que la branca ha acabat, "despausa" la funció anterior, l'enganxa al punter, i passa a la següent línia per fer exactament el mateix amb la branca del pare (father_parents).
-     */
-
 }
 
 //DATE: 22/05/2026. This function prints the tree using the DFS strategy.
 void printTreeDFS(struct FamilyTreeNode *root, int level){
-    if (root == NULL){
+    if (root == NULL || printed_dfs[root->city_id]){
         return;
     }
+    printed_dfs[root->city_id] = 1;
     for (int i = 0; i < level; i++){
         printf("->");
     }
@@ -129,13 +133,16 @@ void printTreeDFS(struct FamilyTreeNode *root, int level){
 }
 //DATE: 25/05/2026. This function prints the tree using the BFS strategy.
 void printTreeBFS(struct FamilyTreeNode *root){
-    if (root == NULL){
+    if (root == NULL || printed_bfs[root->city_id]){
         return;
     }
+
     struct FamilyTreeNode **queue = (struct FamilyTreeNode**)malloc(NUMBER_CITIES * sizeof(struct FamilyTreeNode*));
     int *level_queue = (int*)malloc(NUMBER_CITIES * sizeof(int));
     int front = 0;
     int rear = 0;
+
+    printed_bfs[root->city_id] = 1;
     queue[rear] = root;
     level_queue[rear] = 0;
     rear++;
@@ -153,12 +160,14 @@ void printTreeBFS(struct FamilyTreeNode *root){
         }
         printf("%s and %s (%s)\n", current->motherName, current->fatherName, citiesInfo[current->city_id].city_name);
         //We add the childs to the queue
-        if (current->mother_parents != NULL){
+        if (current->mother_parents != NULL && !printed_bfs[current -> mother_parents -> city_id]){
+            printed_bfs[current->mother_parents->city_id] = 1;
             queue[rear] = current->mother_parents;
             level_queue[rear] = current_level + 1;
             rear++;
         }
-        if (current ->father_parents != NULL){
+        if (current ->father_parents != NULL && !printed_bfs[current->father_parents->city_id]){
+            printed_bfs[current->father_parents->city_id] = 1;
             queue[rear] = current ->father_parents;
             level_queue[rear] = current_level + 1;
             rear++;
@@ -169,29 +178,15 @@ void printTreeBFS(struct FamilyTreeNode *root){
 }
 
 //DATE: 25/05/2026. This function eliminates the tree created 
-void freeAncestorsTree(struct FamilyTreeNode *root){
-    if (root == NULL){
-        return;
+void freeAncestorsTree(){
+    for(int i=0; i<NUMBER_CITIES; i++){
+        if(created_nodes[i] != NULL){
+            free(created_nodes[i]);
+            created_nodes[i] = NULL;
+        }
     }
-    freeAncestorsTree(root->mother_parents);
-    freeAncestorsTree(root->father_parents);
-    free(root);
 }
 
-
-/*IMPORTANT PER ENTENDRE LES DIFERENTS FUNCIONS
-
-main diu: "Vinga, viatgem en DFS!". Crida a traverseTreeDFS().
-
-traverseTreeDFS llegeix l'arbre i diu: "D'acord, estic a l'arrel (Barcelona) i el següent familiar és a París". Llavors crida a RouteSearch(Barcelona, Paris, road_map).
-
-RouteSearch fa els seus càlculs a la matriu i s'adona que ha de passar per Madrid. Per guardar-ho, crida a addToRoadMap(Madrid, cost).
-
-o sigui, primer creem aquest arbre i fem un traverse. Veu que ha d'anar a una ciutat però com que no ens volem gastar molts diners, mirem el RouteSearch quin és el millor camí i una vegada hem calculat el millor camí, crida a addToRoadMap
-
-
-
-*/
 //------------------------------------------------------------ NAVIGATION AND GRAPH IMPLEMENTATION
 
 // DATE 25/05/2026: This function searches the best route between two cities using a greedy heuristic. 
@@ -274,7 +269,9 @@ struct RoadMap* traverseTreeDFS(struct FamilyTreeNode *root, struct RoadMap *roa
     // Go deep on the mother side first (DFS rule)
     if (root->mother_parents != NULL){
         int destination = root -> mother_parents -> city_id;
-        printf("Travelling: %s -> %s\n", 
+        if (!visited_cities_dfs[destination]){
+            visited_cities_dfs[destination] = 1;
+            printf("Travelling: %s -> %s\n", 
             citiesInfo[*current_city].city_name,
             citiesInfo[destination].city_name);
         
@@ -284,18 +281,23 @@ struct RoadMap* traverseTreeDFS(struct FamilyTreeNode *root, struct RoadMap *roa
         printRoadMap(road_map);
         road_map= traverseTreeDFS(root->mother_parents, road_map, current_city);   
     }
+        }
+        
     // Only after the full mother branch is done, go to the father side
     if (root->father_parents != NULL){
         int destination = root->father_parents -> city_id;
-        printf("Traveling: %s -> %s",
+        if (!visited_cities_dfs[destination]){
+            visited_cities_dfs[destination] = 1;
+            printf("Traveling: %s -> %s",
             citiesInfo[*current_city].city_name,
             citiesInfo[destination].city_name);
-
-        road_map = RouteSearch(*current_city, destination, road_map);
-        *current_city= destination;
-        printf("Partial road map so far:\n");
-        printRoadMap(road_map);
-        road_map=traverseTreeDFS(root->father_parents, road_map, current_city);
+            road_map = RouteSearch(*current_city, destination, road_map);
+            *current_city= destination;
+            printf("Partial road map so far:\n");
+            printRoadMap(road_map);
+            road_map=traverseTreeDFS(root->father_parents, road_map, current_city);
+        }
+        
     }
     return road_map;
 }
@@ -319,12 +321,15 @@ struct RoadMap* traverseTreeBFS(struct FamilyTreeNode *root, struct RoadMap *roa
 
     int front = 0;
     int rear = 0;
+    visited_cities_bfs[root->city_id] = 1;
     // Initialize the queue with the root's children (mother first, then father -> BFS level order)
     if (root -> mother_parents != NULL){
+        visited_cities_bfs[root ->mother_parents ->city_id] = 1;
         queue[rear++]= root->mother_parents;
     }
 
     if (root ->father_parents != NULL){
+        visited_cities_bfs[root ->father_parents ->city_id] = 1;
         queue[rear++] = root-> father_parents;
     }
 
@@ -341,10 +346,12 @@ struct RoadMap* traverseTreeBFS(struct FamilyTreeNode *root, struct RoadMap *roa
         printf("Partial road map so far: \n");
         printRoadMap(road_map);
 
-        if (current_node->mother_parents != NULL){
+        if (current_node->mother_parents != NULL && !visited_cities_bfs[current_node->mother_parents->city_id]){
+            visited_cities_bfs[current_node ->mother_parents->city_id] = 1;
             queue[rear++]= current_node->mother_parents;
         }
-        if (current_node->father_parents != NULL){
+        if (current_node->father_parents != NULL && !visited_cities_bfs[current_node->father_parents->city_id]){
+            visited_cities_bfs[current_node -> father_parents -> city_id] = 1;
             queue[rear++] = current_node->father_parents;
         }
     }
@@ -382,6 +389,11 @@ int main(int argc, char **argv){
 
     road_map= addToRoadMap(road_map, root_city, 0);
 
+// Time tracker
+    clock_t beggining, end;
+    double execution_time;
+    beggining = clock();
+
     printf("Ancestrors' tree:\n");
     printf("%s ->Names:\n", argv[1]);
     printf("Partial road map (step by step):");
@@ -392,26 +404,30 @@ int main(int argc, char **argv){
         road_map = traverseTreeBFS(tree, road_map, &current_city);
     }
 
+    end = clock();
     printf("_____Final ancestrors tree (%s order)_____\n", argv[1]);
     if (strcmp(argv[1], "dfs")== 0 ) {
         printTreeDFS(tree, 0);
     } else{
         printTreeBFS(tree);
     }
-
+   
+    execution_time = ((double)(end-beggining)) / CLOCKS_PER_SEC *  1000;
     printf("___Total road map___\n");
     printRoadMap(road_map);
 
     struct RoadMap *tail = road_map;
     while (tail->next != NULL) tail= tail->next;
     printf("Total cost: %d\n", tail->total_cost);
+    printf("Execution time: %.2f ms", execution_time);
 
     road_map = deleteAllRoadMap(road_map);
-    freeAncestorsTree(tree);
+    freeAncestorsTree();
 
     return 0; 
 
 } 
+
 
 
 
