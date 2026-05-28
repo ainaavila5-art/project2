@@ -197,9 +197,12 @@ void freeAncestorsTree(){
 
 struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct RoadMap *road_map){
     int visited[NUMBER_CITIES];
+    int parent[NUMBER_CITIES];
     for (int i=0; i<NUMBER_CITIES; i++){
-        visited[i]=0;
+        visited[i] = 0;
+        parent[i] = -1;
     }
+
     int current = source_city_id;
     int leg_cost = 0;
 
@@ -241,16 +244,27 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
     
     // Dead end: the huristic got stuck(should not heppen with a connected graph)
     if (best_city == -1){
-        printf("Wearning: no path found from %s to %s\n", 
+    //Here, instead of crashing or throwing an error, it tells the program to turn around and go back the way it came
+        if(parent[current] != -1 ){
+            int previous_city = parent[current];
+            leg_cost += adjacency_matrix[current][previous_city];
+            current = previous_city;
+            road_map = addToRoadMap(road_map, current, base_cost + leg_cost);
+            continue;
+
+    } else{
+        printf("Warning: no path found from %s to %s\n", 
             citiesInfo[source_city_id].city_name, 
             citiesInfo[destination_city_id].city_name);
         return road_map;
+        }    
     }
 
+    parent[best_city] = current;
     leg_cost += best_cost;
     current = best_city;
     visited[current]=1;
-    road_map= addToRoadMap(road_map, current, base_cost + leg_cost);
+    road_map = addToRoadMap(road_map, current, base_cost + leg_cost);
 
 }
 
