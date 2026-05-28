@@ -201,7 +201,6 @@ o sigui, primer creem aquest arbre i fem un traverse. Veu que ha d'anar a una ci
 */
 
 struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct RoadMap *road_map){
-    //Array to keep track of visited cities so we never loop back
     int visited[NUMBER_CITIES];
     for (int i=0; i<NUMBER_CITIES; i++){
         visited[i]=0;
@@ -209,7 +208,6 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
     int current = source_city_id;
     int leg_cost = 0;
 
-    // Calculate the base cost already accumulated in the road map 
     int base_cost= 0;
     if (road_map != NULL){
         struct RoadMap*tail = road_map;
@@ -218,15 +216,12 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
         }
         base_cost = tail->total_cost;
     }
-
-    //Add the source city only if the road map is empty (first call).
-    //On the subsequent calls the source is already the last city in the list. 
+ 
     if (road_map == NULL){
         road_map= addToRoadMap(road_map, current, 0);
     }
     visited[current] = 1; 
 
-    //Keep moving until we reach the destination
     while (current != destination_city_id){
         //Step 1: Is a direct edge destination?
         if (adjacency_matrix[current][destination_city_id]!=0){
@@ -346,7 +341,6 @@ struct RoadMap* traverseTreeBFS(struct FamilyTreeNode *root, struct RoadMap *roa
         printf("Partial road map so far: \n");
         printRoadMap(road_map);
 
-        //Enqueue this node's children (mother before father to maintain level order)
         if (current_node->mother_parents != NULL){
             queue[rear++]= current_node->mother_parents;
         }
@@ -381,16 +375,11 @@ int main(int argc, char **argv){
 
     int root_city =0; //Starting city: Barcelona (index 0 in citiesInfo)
 
-    // Step 1: Build the  acestrors tree from civil registry data
-
     struct FamilyTreeNode *tree = buildAncestorsTree(root_city);
-
-    // Step 2: Traverse the tree and build the road map 
 
     struct RoadMap *road_map = NULL;
     int current_city = root_city;
 
-    // The root city is out starting point, so we add it to the road map
     road_map= addToRoadMap(road_map, root_city, 0);
 
     printf("Ancestrors' tree:\n");
@@ -403,7 +392,6 @@ int main(int argc, char **argv){
         road_map = traverseTreeBFS(tree, road_map, &current_city);
     }
 
-    // Step 3: Print the full tree and final road map
     printf("_____Final ancestrors tree (%s order)_____\n", argv[1]);
     if (strcmp(argv[1], "dfs")== 0 ) {
         printTreeDFS(tree, 0);
@@ -414,12 +402,10 @@ int main(int argc, char **argv){
     printf("___Total road map___\n");
     printRoadMap(road_map);
 
-    // Print total cost (sorted in the last node of the road map)
     struct RoadMap *tail = road_map;
     while (tail->next != NULL) tail= tail->next;
     printf("Total cost: %d\n", tail->total_cost);
 
-    // Step 4: Free all dynamic allocated memory 
     road_map = deleteAllRoadMap(road_map);
     freeAncestorsTree(tree);
 
