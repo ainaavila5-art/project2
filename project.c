@@ -15,7 +15,7 @@ Students and NIUS:
 
 //------------------------------------------------------------ PREPARATION AND ENVIRONMENT SETUP
 
-//DATE: 20/05/2026. With the #ifdef directive we can dyamically load different civil registry datasets
+//DATE: 20/05/2026. Load the selected civil registry dataset for execution
 #define LARGE
 #ifdef SMALL
     #include "small.h"
@@ -33,8 +33,7 @@ int visited_cities_bfs[NUMBER_CITIES] = {0};
 int printed_dfs[NUMBER_CITIES] = {0};
 int printed_bfs[NUMBER_CITIES] = {0};
 
-/*DATE: 21/05/2026. This function checks if the input introduced by the user is correct
-by using a series of conditionals
+/*DATE: 21/05/2026. This function validtes the command-line provided by the user
 */
 void CheckArguments (int argc, char **argv){
     if (argc != 2){
@@ -192,7 +191,7 @@ void freeAncestorsTree(){
 // DATE 25/05/2026: This function searches the best route between two cities using a greedy heuristic. 
 /* We use a 2-step rule at each city: 
     1. If there is a direct edge to the destination, we take it immediately. 
-    2. Otherwise, move to the cheapest unvisited neigbour(gready best-first step)
+    2. Otherwise, move to the cheapest unvisited neighbour(greedy best-first step)
 */
 
 struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct RoadMap *road_map){
@@ -221,7 +220,7 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
     visited[current] = 1; 
 
     while (current != destination_city_id){
-        //Step 1: Is a direct edge destination?
+        //Step 1
         if (adjacency_matrix[current][destination_city_id]!=0){
             leg_cost+= adjacency_matrix[current][destination_city_id];
             current = destination_city_id;
@@ -230,7 +229,7 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
         
         }
 
-        //Step 2: Greedy -pick the cheapest unvisited neighbour
+        //Step 2
         int best_city = -1;
         int best_cost= 999999;
         for ( int i=0; i<NUMBER_CITIES; i++){
@@ -242,9 +241,9 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
             }
         }
     
-    // Dead end: the huristic got stuck(should not heppen with a connected graph)
+    // Dead end: the heuristic got stuck(should not happen with a connected graph)
     if (best_city == -1){
-    //Here, instead of crashing or throwing an error, it tells the program to turn around and go back the way it came
+    //Backtracks to the previous valid city to recover from a local dead end
         if(parent[current] != -1 ){
             int previous_city = parent[current];
             leg_cost += adjacency_matrix[current][previous_city];
@@ -271,7 +270,7 @@ struct RoadMap* RouteSearch(int source_city_id, int destination_city_id, struct 
 return road_map;
 }
 
-//DATE 25/05/2026: This functions traverse the ancestrors tree already build using DFS
+//DATE 25/05/2026: This function traverses the ancestors tree already built using DFS
 /*It will compute the full mother branch before father branch and calls RouteSearch for each 
 hop between cities, building the complete road map as a side effect. */
 
@@ -302,7 +301,7 @@ struct RoadMap* traverseTreeDFS(struct FamilyTreeNode *root, struct RoadMap *roa
         int destination = root->father_parents -> city_id;
         if (!visited_cities_dfs[destination]){
             visited_cities_dfs[destination] = 1;
-            printf("Traveling: %s -> %s",
+            printf("Traveling: %s -> %s\n",
             citiesInfo[*current_city].city_name,
             citiesInfo[destination].city_name);
             road_map = RouteSearch(*current_city, destination, road_map);
@@ -316,7 +315,7 @@ struct RoadMap* traverseTreeDFS(struct FamilyTreeNode *root, struct RoadMap *roa
     return road_map;
 }
 
-// DATE 25/05/2026: This fucntion traverse the acestrors tree using BFS.
+// DATE 25/05/2026: This function traverse the ancestrors tree using BFS.
 /*All nodes are at level N before any node at level N+1, mother side before
 father side within each level, and calls RouteSearch for the hop, building the road map.*/ 
 
@@ -375,7 +374,7 @@ struct RoadMap* traverseTreeBFS(struct FamilyTreeNode *root, struct RoadMap *roa
 
 //----------------------------------------------------------- CLOSING AND DEFINITION
 
-/*DATE 25/05/2026: Main function. Recives "DFS" or "BFS as argument and:"
+/*DATE 25/05/2026: Main function. Receives "DFS" or "BFS as argument and:"
     1. Builds the acestrors tree from the civil registry data.
     2. Traverses it with the chosen strategy, building the road map. 
     3. Prints the final tree and the full road map with total cost 
@@ -403,7 +402,6 @@ int main(int argc, char **argv){
 
     road_map= addToRoadMap(road_map, root_city, 0);
 
-// Time tracker
     clock_t beggining, end;
     double execution_time;
     beggining = clock();
@@ -419,7 +417,7 @@ int main(int argc, char **argv){
     }
 
     end = clock();
-    printf("_____Final ancestrors tree (%s order)_____\n", argv[1]);
+    printf("_____Final ancestors tree (%s order)_____\n", argv[1]);
     if (strcmp(argv[1], "dfs")== 0 ) {
         printTreeDFS(tree, 0);
     } else{
